@@ -12,42 +12,54 @@ import (
 )
 
 type Server struct {
-	*http.Server
+	s *http.Server
+}
+
+func NewServer(port string, handler http.Handler) Server {
+	return Server{
+		s: &http.Server{
+			Addr:         ":" + port,
+			WriteTimeout: time.Second * 15,
+			ReadTimeout:  time.Second * 15,
+			IdleTimeout:  time.Second * 60,
+			Handler:      handler,
+		},
+	}
 }
 
 // Start runs ListenAndServe on the http.Server with graceful shutdown.
 func (s *Server) Start() {
-	log.Info().Msgf("Server is running on port %s", s.Addr)
+	log.Info().Msgf("Server is running on port %s", s.s.Addr)
 	go func() {
-		if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := s.s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error().Msgf("closed Server error %s", err.Error())
 		}
 	}()
-	s.GracefulShutdown()
+	s.gracefulShutdown()
 }
 
-func (s *Server) GracefulShutdown() {
+func (s *Server) gracefulShutdown() {
 	quit := make(chan os.Signal, 1)
 
 	signal.Notify(quit, syscall.SIGINT)
 	sig := <-quit
-	log.Info().Msgf("Server is shutting down %s", sig.String())
+	log.Info().Msgf("server is shutting down %s", sig.String())
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	s.SetKeepAlivesEnabled(false)
-	if err := s.Shutdown(ctx); err != nil {
+	s.s.SetKeepAlivesEnabled(false)
+	if err := s.s.Shutdown(ctx); err != nil {
 		log.Error().Msgf("could not gracefully shutdown the Server %s", err.Error())
 	}
-	log.Info().Msg("Server stopped")
+	log.Info().Msg("server stopped")
 }
 
 type WebHandler func(w http.ResponseWriter, r *http.Request) error
 
-func Unwrap(f WebHandler) http.HandlerFunc {
+func Unwrap(next WebHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := f(w, r)
+		err := next(w, r)
 
 		if err != nil {
 			requestID := middleware.GetReqID(r.Context())
