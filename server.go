@@ -15,8 +15,9 @@ type Server struct {
 	s *http.Server
 }
 
-func NewServer(port string, handler http.Handler) Server {
-	return Server{
+// NewServer return a *Server.
+func NewServer(port string, handler http.Handler) *Server {
+	return &Server{
 		s: &http.Server{
 			Addr:         ":" + port,
 			WriteTimeout: time.Second * 15,
@@ -64,7 +65,7 @@ func Unwrap(next WebHandler) http.HandlerFunc {
 		if err != nil {
 			requestID := middleware.GetReqID(r.Context())
 			log.Error().Caller(1).Err(err).Str("RequestID", requestID).Msg("cannot process request")
-			ReturnErr(w, err)
+			wrapErrorResponse(w, err)
 		}
 	}
 }

@@ -12,29 +12,29 @@ type HttpResponse struct {
 	Success bool        `json:"success"`
 }
 
-type Err struct {
+type err struct {
 	Message string
 	Code    int
 }
 
-func (e Err) Error() string {
+func (e err) Error() string {
 	return e.Message
 }
 
-func transform(e error) *Err {
-	var webErr *Err
+func transform(e error) *err {
+	var webErr *err
 	if errors.As(e, webErr) {
-		err := e.(Err)
+		err := e.(err)
 		return &err
 	}
 
-	return &Err{
+	return &err{
 		Message: "errors during the request",
 		Code:    http.StatusInternalServerError,
 	}
 }
 
-func ReturnErr(w http.ResponseWriter, err error) {
+func wrapErrorResponse(w http.ResponseWriter, err error) {
 	_err := transform(err)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(_err.Code)
@@ -44,40 +44,4 @@ func ReturnErr(w http.ResponseWriter, err error) {
 		Success: false,
 	})
 	_, _ = w.Write(r)
-}
-
-func ResponseUnauthorized(w http.ResponseWriter, msg string) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusUnauthorized)
-	r, _ := json.Marshal(HttpResponse{
-		Message: msg,
-		Success: false,
-	})
-	_, _ = w.Write(r)
-}
-
-func ResponseOK(w http.ResponseWriter, msg string, data interface{}) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(HttpResponse{
-		Message: msg,
-		Success: true,
-		Data:    data,
-	})
-	return nil
-}
-
-func ResponseCreated(w http.ResponseWriter, msg string, data interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	_ = json.NewEncoder(w).Encode(HttpResponse{
-		Message: msg,
-		Success: true,
-		Data:    data,
-	})
-}
-
-func ResponseNoContent(w http.ResponseWriter) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNoContent)
 }
