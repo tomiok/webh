@@ -18,10 +18,17 @@ func Response(status int, w http.ResponseWriter, msg string, data any) {
 	})
 }
 
+// Res is a wrapper for web handlers that are compliant with the stdlib signature but returning an error.
+func Res(status int, w http.ResponseWriter, data any) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+
+	return json.NewEncoder(w).Encode(data)
+}
+
 // ResponseErr is a wrapper for web handlers that are compliant with the stdlib signature but returning an error.
 func ResponseErr(status int, w http.ResponseWriter, msg string, data any) error {
 	w.Header().Set("Content-Type", "application/json")
-
 	w.WriteHeader(status)
 
 	return json.NewEncoder(w).Encode(HttpResponse{
