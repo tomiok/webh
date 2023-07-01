@@ -12,23 +12,23 @@ type HttpResponse struct {
 	Success bool        `json:"success"`
 }
 
-type err struct {
+type errHTTP struct {
 	Message string
 	Code    int
 }
 
-func (e err) Error() string {
+func (e errHTTP) Error() string {
 	return e.Message
 }
 
-func transform(e error) *err {
-	var webErr *err
-	if errors.As(e, webErr) {
-		err := e.(err)
+func transform(e error) *errHTTP {
+	var webErr errHTTP
+	if errors.As(e, &webErr) {
+		err := e.(errHTTP)
 		return &err
 	}
 
-	return &err{
+	return &errHTTP{
 		Message: "errors during the request",
 		Code:    http.StatusInternalServerError,
 	}
