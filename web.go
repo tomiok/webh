@@ -12,26 +12,13 @@ type HttpResponse struct {
 	Success bool        `json:"success"`
 }
 
-type errHTTP struct {
+type ErrHTTP struct {
 	Message string
 	Code    int
 }
 
-func (e errHTTP) Error() string {
+func (e ErrHTTP) Error() string {
 	return e.Message
-}
-
-func transform(e error) *errHTTP {
-	var webErr errHTTP
-	if errors.As(e, &webErr) {
-		err := e.(errHTTP)
-		return &err
-	}
-
-	return &errHTTP{
-		Message: "errors during the request",
-		Code:    http.StatusInternalServerError,
-	}
 }
 
 func wrapErrorResponse(w http.ResponseWriter, err error) {
@@ -44,4 +31,17 @@ func wrapErrorResponse(w http.ResponseWriter, err error) {
 		Success: false,
 	})
 	_, _ = w.Write(r)
+}
+
+func transform(e error) *ErrHTTP {
+	var webErr ErrHTTP
+	if errors.As(e, &webErr) {
+		err := e.(ErrHTTP)
+		return &err
+	}
+
+	return &ErrHTTP{
+		Message: "errors during the request",
+		Code:    http.StatusInternalServerError,
+	}
 }

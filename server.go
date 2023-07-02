@@ -30,7 +30,7 @@ func NewServer(port string, handler http.Handler) *Server {
 
 // Start runs ListenAndServe on the http.Server with graceful shutdown.
 func (s *Server) Start() {
-	log.Info().Msgf("Server is running on port %s", s.s.Addr)
+	log.Info().Msgf("server is running on port %s", s.s.Addr)
 	go func() {
 		if err := s.s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error().Msgf("closed Server error %s", err.Error())
@@ -58,13 +58,19 @@ func (s *Server) gracefulShutdown() {
 
 type WebHandler func(w http.ResponseWriter, r *http.Request) error
 
-func Unwrap(next WebHandler) http.HandlerFunc {
+func Unwrap(h WebHandler) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := next(w, r)
+		err := h(w, r)
 
 		if err != nil {
 			requestID := middleware.GetReqID(r.Context())
-			log.Error().Caller(1).Err(err).Str("RequestID", requestID).Msg("cannot process request")
+			evt := log.Error().Caller(2).Err(err)
+			if requestID != "" {
+				evt.Str("RequestID", requestID).Msg("cannot process request")
+			} else {
+				evt.Msg("cannot process request")
+			}
+
 			wrapErrorResponse(w, err)
 		}
 	}
