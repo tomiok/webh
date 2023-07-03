@@ -66,10 +66,10 @@ func Unwrap(h WebHandler) http.HandlerFunc {
 			requestID := middleware.GetReqID(r.Context())
 			evt := log.Error().Caller(2).Err(err)
 			if requestID != "" {
-				evt.Str("RequestID", requestID).Msg("cannot process request")
-			} else {
-				evt.Msg("cannot process request")
+				evt = evt.Str("RequestID", requestID)
 			}
+
+			evt.Msg("cannot process request")
 
 			wrapErrorResponse(w, err)
 		}
