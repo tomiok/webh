@@ -64,14 +64,13 @@ func Unwrap(h WebHandler) http.HandlerFunc {
 
 		if err != nil {
 			requestID := middleware.GetReqID(r.Context())
-			evt := log.Error().Caller(2).Err(err)
+			evt := log.Error().Err(err)
 			if requestID != "" {
 				evt = evt.Str("RequestID", requestID)
 			}
 
 			evt.Msg("cannot process request")
-
-			wrapErrorResponse(w, err)
+			wrapErrorResponse(w, requestID, err)
 		}
 	}
 }
