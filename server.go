@@ -2,7 +2,9 @@ package webh
 
 import (
 	"context"
+	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/httplog"
 	"github.com/rs/zerolog/log"
 	"net/http"
 	"os"
@@ -13,17 +15,35 @@ import (
 
 type Server struct {
 	s *http.Server
+	*chi.Mux
 }
 
 // NewServer return a *Server.
-func NewServer(port string, handler http.Handler) *Server {
+func NewServer(port string) *Server {
+	srv := newServer(port)
+	logger := httplog.NewLogger("httplog-example", httplog.Options{
+		JSON: true,
+	})
+
+	srv.Use(
+		middleware.Recoverer,
+		middleware.RequestID,
+		httplog.RequestLogger(logger),
+		middleware.Heartbeat("/ping"),
+	)
+	return srv
+}
+
+func newServer(port string) *Server {
+	mux := chi.NewMux()
 	return &Server{
+		Mux: mux,
 		s: &http.Server{
 			Addr:         ":" + port,
 			WriteTimeout: time.Second * 15,
 			ReadTimeout:  time.Second * 15,
 			IdleTimeout:  time.Second * 60,
-			Handler:      handler,
+			Handler:      mux,
 		},
 	}
 }
@@ -63,8 +83,10 @@ func Unwrap(h WebHandler) http.HandlerFunc {
 		err := h(w, r)
 
 		if err != nil {
+			oplog := httplog.LogEntry(r.Context())
+
 			requestID := middleware.GetReqID(r.Context())
-			evt := log.Error().Err(err)
+			evt := oplog.Error()
 			if requestID != "" {
 				evt = evt.Str("RequestID", requestID)
 			}

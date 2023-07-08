@@ -3,7 +3,6 @@ package webh
 import (
 	"encoding/json"
 	"errors"
-	"github.com/rs/zerolog/log"
 	"io"
 	"net/http"
 )
@@ -59,7 +58,6 @@ func EJson(w io.Writer, v any) error {
 // Djson is a generic way to unmarshal your JSON.
 func Djson[t any](b io.ReadCloser, target *t) (*t, error) {
 	defer func() {
-		log.Info().Msg("closing")
 		_ = b.Close()
 	}()
 
