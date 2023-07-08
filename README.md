@@ -1,4 +1,4 @@
-[![License](https://img.shields.io/github/license/elnawe/stanczyk?style=for-the-badge)](https://github.com/tomiok/webh/blob/main/LICENSE)
+[![License](https://img.shields.io/github/license/tomiok/webh?style=for-the-badge)](https://github.com/tomiok/webh/blob/master/LICENSE)
 
 # webh, the web helper for Golang
 
