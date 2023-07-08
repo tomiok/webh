@@ -19,15 +19,15 @@ type Server struct {
 }
 
 // NewServer return a *Server.
-func NewServer(port string) *Server {
+func NewServer(port, serviceName string) *Server {
 	srv := newServer(port)
-	logger := httplog.NewLogger("httplog-example", httplog.Options{
-		JSON: true,
+	logger := httplog.NewLogger(serviceName, httplog.Options{
+		JSON:            true,
+		Concise:         true,
+		TimeFieldFormat: time.UnixDate,
 	})
 
 	srv.Use(
-		middleware.Recoverer,
-		middleware.RequestID,
 		httplog.RequestLogger(logger),
 		middleware.Heartbeat("/ping"),
 	)
