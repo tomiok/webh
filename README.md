@@ -1,3 +1,5 @@
+[![License](https://img.shields.io/github/license/elnawe/stanczyk?style=for-the-badge)](https://github.com/tomiok/webh/blob/main/LICENSE)
+
 # webh, the web helper for Golang
 
 ## Include web code snippets for speed up the development.
