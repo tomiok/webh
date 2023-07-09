@@ -17,3 +17,60 @@ A clean mechanism to log errors among the http requests.
 Encoder and Decoder for JSON.
 
 A custom error type for web purposes.
+
+The Server is created on top of [chi](https://go-chi.io) web library, so will have all
+the same features and ways to declare endpoints.
+
+
+Heartbeat at `/ping` is already declared for you, among recover and logger. Do not worry to add them.
+
+### Installation
+
+```shell
+go get github.com/tomiok/webh@v0.1.1
+```
+
+### Create and start the server with one endpoint.
+```go
+s := webh.NewServer("8080", "developer-portal")
+
+s.Get("/hello", func(w http.ResponseWriter, r *http.Request){
+	//.....
+})
+
+s.Start()
+```
+
+or use a custom handler returning an error.
+
+```go
+package web
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+)
+
+func SayHello(w io.Writer) error {
+	_, err := fmt.Fprint(w, "hello")
+	return err
+}
+
+func HelloHandler(w http.ResponseWriter, r *http.Request) error {
+	return SayHello(w)
+}
+```
+```go
+package main
+
+import "github.com/tomiok/webh"
+
+func main() {
+	s := webh.NewServer("8080", "developer-portal")
+
+	s.Get("/hello", webh.Unwrap(HelloHandler))
+
+	s.Start()
+}
+```
