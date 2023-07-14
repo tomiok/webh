@@ -3,8 +3,12 @@ package webh
 import (
 	"encoding/json"
 	"errors"
+	"github.com/go-chi/chi/v5"
 	"io"
 	"net/http"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 type HttpResponse struct {
@@ -107,5 +111,33 @@ func ResponseErr(status int, w http.ResponseWriter, msg string, data any) error 
 		Message: msg,
 		Data:    data,
 		Success: status < 399,
+	})
+}
+
+// FileServer will be used to serve the static files, please specify the route.
+func (s *Server) FileServer(path string) {
+	workDir, _ := os.Getwd()
+	filesDir := http.Dir(filepath.Join(workDir, path))
+	fs(s.Mux, "/"+path, filesDir)
+}
+
+// fs conveniently sets up a http.FileServer handler to serve
+// static files from a http.FileSystem.
+func fs(r chi.Router, path string, root http.FileSystem) {
+	if strings.ContainsAny(path, "{}*") {
+		panic("file server does not permit any URL parameters")
+	}
+
+	if path != "/" && path[len(path)-1] != '/' {
+		r.Get(path, http.RedirectHandler(path+"/", http.StatusMovedPermanently).ServeHTTP)
+		path += "/"
+	}
+	path += "*"
+
+	r.Get(path, func(w http.ResponseWriter, r *http.Request) {
+		rctx := chi.RouteContext(r.Context())
+		pathPrefix := strings.TrimSuffix(rctx.RoutePattern(), "/*")
+		fs := http.StripPrefix(pathPrefix, http.FileServer(root))
+		fs.ServeHTTP(w, r)
 	})
 }
