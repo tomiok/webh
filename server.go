@@ -24,8 +24,9 @@ type Server struct {
 // Options is for whatever server you want to build. The usability is production-ready but you can still
 // add more middlewares or configurations.
 type Options struct {
-	cors   func(http.Handler) http.Handler
-	logger func(http.Handler) http.Handler
+	cors      func(http.Handler) http.Handler
+	logger    func(http.Handler) http.Handler
+	heartbeat func(http.Handler) http.Handler
 }
 
 type CorsOpt struct {
@@ -37,6 +38,7 @@ type CorsOpt struct {
 	MaxAge           int
 }
 
+// WithCors add cors to your web server.
 func WithCors(opt CorsOpt) Option {
 	return func(options *Options) {
 		options.cors = cors.Handler(cors.Options{
@@ -51,9 +53,10 @@ func WithCors(opt CorsOpt) Option {
 	}
 }
 
-func WithLogger() Option {
+// WithLogger add a JSON logger to your web server.
+func WithLogger(serviceName string) Option {
 	return func(opt *Options) {
-		logger := httplog.NewLogger("", httplog.Options{
+		logger := httplog.NewLogger(serviceName, httplog.Options{
 			LogLevel:      "INFO",
 			JSON:          true,
 			Concise:       true,
@@ -63,19 +66,29 @@ func WithLogger() Option {
 	}
 }
 
-// NewServer return a *Server.
-func NewServer(port, serviceName string, options ...Options) *Server {
-	srv := newServer(port, serviceName)
-
-	var mids []func(handler http.Handler) http.Handler
-	for _, opt := range options {
-		mids = append(mids, opt.cors)
+// WithHeartbeat add a dummy endpoint in the specified path. Will return a non-json response "." with a 200 status.
+func WithHeartbeat(path string) Option {
+	return func(opt *Options) {
+		opt.heartbeat = middleware.Heartbeat(path)
 	}
-	srv.Use(mids...)
+}
+
+// NewServer return a *Server.
+func NewServer(port string, options ...Options) *Server {
+	srv := newServer(port)
+
+	if options != nil {
+		var mids []func(handler http.Handler) http.Handler
+		for _, opt := range options {
+			mids = append(mids, opt.cors)
+		}
+		srv.Use(mids...)
+	}
+
 	return srv
 }
 
-func newServer(port, serviceName string) *Server {
+func newServer(port string) *Server {
 	mux := chi.NewMux()
 
 	return &Server{
