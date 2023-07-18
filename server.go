@@ -29,6 +29,22 @@ type Options struct {
 	heartbeat func(http.Handler) http.Handler
 }
 
+func (o *Options) Use() []func(http.Handler) http.Handler {
+	var mids []func(http.Handler) http.Handler
+
+	if o.heartbeat != nil {
+		mids = append(mids, o.heartbeat)
+	}
+	if o.logger != nil {
+		mids = append(mids, o.logger)
+	}
+	if o.cors != nil {
+		mids = append(mids, o.cors)
+	}
+
+	return mids
+}
+
 type CorsOpt struct {
 	AllowedOrigins []string
 	AllowedHeaders []string
@@ -74,14 +90,15 @@ func WithHeartbeat(path string) Option {
 }
 
 // NewServer return a *Server.
-func NewServer(port string, options ...Options) *Server {
+func NewServer(port string, options ...Option) *Server {
 	srv := newServer(port)
-
+	opts := &Options{}
 	if options != nil {
-		var mids []func(handler http.Handler) http.Handler
+
 		for _, opt := range options {
-			mids = append(mids, opt.cors)
+			opt(opts)
 		}
+		mids := opts.Use()
 		srv.Use(mids...)
 	}
 
