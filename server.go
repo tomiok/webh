@@ -14,22 +14,22 @@ import (
 	"time"
 )
 
-type Option func(options *Options)
+type option func(options *options)
 type Server struct {
 	s *http.Server
 
 	*chi.Mux
 }
 
-// Options is for whatever server you want to build. The usability is production-ready but you can still
+// options is for whatever server you want to build. The usability is production-ready but you can still
 // add more middlewares or configurations.
-type Options struct {
+type options struct {
 	cors      func(http.Handler) http.Handler
 	logger    func(http.Handler) http.Handler
 	heartbeat func(http.Handler) http.Handler
 }
 
-func (o *Options) Use() []func(http.Handler) http.Handler {
+func (o *options) use() []func(http.Handler) http.Handler {
 	var mids []func(http.Handler) http.Handler
 
 	if o.heartbeat != nil {
@@ -55,8 +55,8 @@ type CorsOpt struct {
 }
 
 // WithCors add cors to your web server.
-func WithCors(opt CorsOpt) Option {
-	return func(options *Options) {
+func WithCors(opt CorsOpt) option {
+	return func(options *options) {
 		options.cors = cors.Handler(cors.Options{
 
 			AllowedOrigins:   opt.AllowedOrigins,
@@ -70,8 +70,8 @@ func WithCors(opt CorsOpt) Option {
 }
 
 // WithLogger add a JSON logger to your web server.
-func WithLogger(serviceName string) Option {
-	return func(opt *Options) {
+func WithLogger(serviceName string) option {
+	return func(opt *options) {
 		logger := httplog.NewLogger(serviceName, httplog.Options{
 			LogLevel:      "INFO",
 			JSON:          true,
@@ -83,24 +83,23 @@ func WithLogger(serviceName string) Option {
 }
 
 // WithHeartbeat add a dummy endpoint in the specified path. Will return a non-json response "." with a 200 status.
-func WithHeartbeat(path string) Option {
-	return func(opt *Options) {
+func WithHeartbeat(path string) option {
+	return func(opt *options) {
 		opt.heartbeat = middleware.Heartbeat(path)
 	}
 }
 
 // NewServer return a *Server.
-func NewServer(port string, options ...Option) *Server {
+func NewServer(port string, serverOptions ...option) *Server {
 	srv := newServer(port)
-	opts := &Options{}
-	if options != nil {
+	opts := &options{}
 
-		for _, opt := range options {
-			opt(opts)
-		}
-		mids := opts.Use()
-		srv.Use(mids...)
+	for _, opt := range serverOptions {
+		opt(opts)
 	}
+
+	mids := opts.use()
+	srv.Use(mids...)
 
 	return srv
 }
