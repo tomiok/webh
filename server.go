@@ -14,7 +14,7 @@ import (
 	"time"
 )
 
-type option func(options *options)
+type Option func(options *options)
 type Server struct {
 	s *http.Server
 
@@ -55,12 +55,12 @@ type CorsOpt struct {
 }
 
 // WithCors add cors to your web server.
-func WithCors(opt CorsOpt) option {
+// AllowedMethods example {"GET", "POST", "PUT", "DELETE", "OPTIONS"}.
+func WithCors(opt CorsOpt, allowedMethods ...string) Option {
 	return func(options *options) {
 		options.cors = cors.Handler(cors.Options{
-
 			AllowedOrigins:   opt.AllowedOrigins,
-			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedMethods:   allowedMethods,
 			AllowedHeaders:   opt.AllowedHeaders,
 			ExposedHeaders:   opt.ExposedHeaders,
 			AllowCredentials: opt.AllowCredentials,
@@ -70,27 +70,30 @@ func WithCors(opt CorsOpt) option {
 }
 
 // WithLogger add a JSON logger to your web server.
-func WithLogger(serviceName string) option {
+func WithLogger(serviceName string) Option {
 	return func(opt *options) {
 		logger := httplog.NewLogger(serviceName, httplog.Options{
-			LogLevel:      "INFO",
-			JSON:          true,
-			Concise:       true,
-			TimeFieldName: "at",
+			LogLevel:        "INFO",
+			LevelFieldName:  "LEVEL",
+			JSON:            true,
+			Concise:         true,
+			Tags:            map[string]string{"test": "killer"},
+			TimeFieldFormat: time.ANSIC,
+			TimeFieldName:   "at",
 		})
 		opt.logger = httplog.RequestLogger(logger)
 	}
 }
 
 // WithHeartbeat add a dummy endpoint in the specified path. Will return a non-json response "." with a 200 status.
-func WithHeartbeat(path string) option {
+func WithHeartbeat(path string) Option {
 	return func(opt *options) {
 		opt.heartbeat = middleware.Heartbeat(path)
 	}
 }
 
 // NewServer return a *Server.
-func NewServer(port string, serverOptions ...option) *Server {
+func NewServer(port string, serverOptions ...Option) *Server {
 	srv := newServer(port)
 	opts := &options{}
 

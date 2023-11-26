@@ -16,6 +16,13 @@ func Test_serverCreate(t *testing.T) {
 	})
 
 	go func() {
+		client := http.Client{}
+		_, err := client.Get("http://localhost:8080/test")
+		if err != nil {
+			panic(err)
+		}
+
+		//fmt.Println(fmt.Sprintf("%+v", res.Body))
 		time.Sleep(5 * time.Second)
 		_ = syscall.Kill(syscall.Getpid(), syscall.SIGINT)
 	}()
