@@ -9,7 +9,7 @@ import (
 )
 
 func Test_serverCreate(t *testing.T) {
-	s := webh.NewServer("8080", webh.WithLogger("hello"), webh.WithHeartbeat("/ping"))
+	s := webh.NewServer("8080", webh.WithRequestLogger("hello"), webh.WithHeartbeat("/ping"))
 
 	s.Get("/test", func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("hello"))

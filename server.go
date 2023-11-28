@@ -69,15 +69,14 @@ func WithCors(opt CorsOpt, allowedMethods ...string) Option {
 	}
 }
 
-// WithLogger add a JSON logger to your web server.
-func WithLogger(serviceName string) Option {
+// WithRequestLogger add a JSON logger to your web server.
+func WithRequestLogger(serviceName string) Option {
 	return func(opt *options) {
 		logger := httplog.NewLogger(serviceName, httplog.Options{
 			LogLevel:        "INFO",
 			LevelFieldName:  "LEVEL",
 			JSON:            true,
 			Concise:         true,
-			Tags:            map[string]string{"test": "killer"},
 			TimeFieldFormat: time.ANSIC,
 			TimeFieldName:   "at",
 		})
@@ -93,6 +92,7 @@ func WithHeartbeat(path string) Option {
 }
 
 // NewServer return a *Server.
+// Including Logger will include also recoverer and requestID middlewares.
 func NewServer(port string, serverOptions ...Option) *Server {
 	srv := newServer(port)
 	opts := &options{}

@@ -32,7 +32,7 @@ go get github.com/tomiok/webh@v0.1.1
 
 ### Create and start the server with one endpoint.
 ```go
-s := webh.NewServer("8080", "developer-portal")
+s := webh.NewServer("8080", webh.WithLogger("hello"), webh.WithHeartbeat("/ping"))
 
 s.Get("/hello", func(w http.ResponseWriter, r *http.Request){
 	//.....
@@ -48,17 +48,12 @@ package web
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 )
 
-func SayHello(w io.Writer) error {
+func HelloHandler(w http.ResponseWriter, r *http.Request) error {
 	_, err := fmt.Fprint(w, "hello")
 	return err
-}
-
-func HelloHandler(w http.ResponseWriter, r *http.Request) error {
-	return SayHello(w)
 }
 ```
 ```go
@@ -67,7 +62,7 @@ package main
 import "github.com/tomiok/webh"
 
 func main() {
-	s := webh.NewServer("8080", "developer-portal")
+	s := webh.NewServer("8080", webh.WithLogger("hello"), webh.WithHeartbeat("/ping"))
 
 	s.Get("/hello", webh.Unwrap(HelloHandler))
 
