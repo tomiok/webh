@@ -27,6 +27,7 @@ type options struct {
 	cors      func(http.Handler) http.Handler
 	logger    func(http.Handler) http.Handler
 	heartbeat func(http.Handler) http.Handler
+	compress  func(http.Handler) http.Handler
 }
 
 func (o *options) use() []func(http.Handler) http.Handler {
@@ -40,6 +41,10 @@ func (o *options) use() []func(http.Handler) http.Handler {
 	}
 	if o.cors != nil {
 		mids = append(mids, o.cors)
+	}
+
+	if o.compress != nil {
+		mids = append(mids, o.compress)
 	}
 
 	return mids
@@ -66,6 +71,19 @@ func WithCors(opt CorsOpt, allowedMethods ...string) Option {
 			AllowCredentials: opt.AllowCredentials,
 			MaxAge:           opt.MaxAge, // Maximum value not ignored by any of major browsers
 		})
+	}
+}
+
+// WithCompress you can add a compress middleware.
+// NOTE: make sure to set the Content-Type header on your response
+// otherwise this middleware will not compress the response body. For ex, in
+// your handler you should set w.Header().Set("Content-Type", http.DetectContentType(yourBody))
+// or set it manually.
+//
+// Passing a compression level of 5 is sensible value
+func WithCompress(level int, types ...string) Option {
+	return func(opt *options) {
+		opt.compress = middleware.Compress(level, types...)
 	}
 }
 

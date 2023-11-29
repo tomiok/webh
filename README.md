@@ -27,7 +27,7 @@ Heartbeat at `/ping` is already declared for you, among recover and logger. Do n
 ### Installation
 
 ```shell
-go get github.com/tomiok/webh@v0.1.1
+go get -u github.com/tomiok/webh
 ```
 
 ### Create and start the server with one endpoint.
