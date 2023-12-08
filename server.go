@@ -176,10 +176,8 @@ func Unwrap(h WebHandler) http.HandlerFunc {
 		err := h(w, r)
 
 		if err != nil {
-			oplog := httplog.LogEntry(r.Context())
-
 			requestID := middleware.GetReqID(r.Context())
-			oplog.Error().Str("RequestID", requestID).Msg("cannot process request")
+			log.Printf("cannot process request - RequestID %s", requestID)
 
 			wrapErrorResponse(w, requestID, err)
 		}
