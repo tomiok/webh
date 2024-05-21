@@ -2,16 +2,18 @@ package webh
 
 import (
 	"context"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"github.com/go-chi/cors"
-	"github.com/go-chi/httplog"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
+	"github.com/go-chi/httplog/v2"
 )
 
 type Option func(options *options)
@@ -88,16 +90,21 @@ func WithCompress(level int, types ...string) Option {
 }
 
 // WithRequestLogger add a JSON logger to your web server.
-func WithRequestLogger(serviceName string) Option {
+func WithRequestLogger(serviceName string, loggerOptions ...httplog.Options) Option {
+	loggerOption := httplog.Options{
+		LogLevel:        slog.LevelInfo,
+		LevelFieldName:  "LEVEL",
+		JSON:            true,
+		Concise:         true,
+		TimeFieldFormat: time.ANSIC,
+		TimeFieldName:   "at",
+	}
+	if len(loggerOptions) > 0 {
+		loggerOption = loggerOptions[0]
+	}
+
 	return func(opt *options) {
-		logger := httplog.NewLogger(serviceName, httplog.Options{
-			LogLevel:        "INFO",
-			LevelFieldName:  "LEVEL",
-			JSON:            true,
-			Concise:         true,
-			TimeFieldFormat: time.ANSIC,
-			TimeFieldName:   "at",
-		})
+		logger := httplog.NewLogger(serviceName, loggerOption)
 		opt.logger = httplog.RequestLogger(logger)
 	}
 }

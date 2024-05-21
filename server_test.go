@@ -1,11 +1,12 @@
 package webh_test
 
 import (
-	"github.com/tomiok/webh"
 	"net/http"
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/tomiok/webh"
 )
 
 func Test_serverCreate(t *testing.T) {
